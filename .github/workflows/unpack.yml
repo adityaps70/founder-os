@@ -1,0 +1,23 @@
+name: Unpack Founder OS source
+on:
+  push:
+    paths: ["founder-os-src.zip"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip the uploaded source and commit it
+        run: |
+          set -e
+          test -f founder-os-src.zip || { echo "nothing to unpack"; exit 0; }
+          unzip -o -q founder-os-src.zip -d .
+          git rm -q founder-os-src.zip
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add Founder OS v0.1 source"
+          git push
