@@ -1,0 +1,9 @@
+# Used by `npm run preview` (local Cloudflare Workers runtime). Copy to .dev.vars.
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_APP_URL=http://localhost:8787
+NEXT_PUBLIC_APP_TIMEZONE=Asia/Kolkata
+ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_MODEL=claude-sonnet-4-5
+BILLING_PROVIDER=stub

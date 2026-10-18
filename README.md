@@ -63,9 +63,21 @@ npm run dev        # http://localhost:3000
 npm run build      # production build + type check
 ```
 
-### 4. Deploy (Vercel)
+### 4. Deploy (Cloudflare Workers)
 
-Import the repo in Vercel, add the environment variables above, and deploy. Then add the production URL to Supabase's redirect URLs.
+Founder OS runs on Cloudflare Workers through [OpenNext](https://opennext.js.org/cloudflare). The config is in `wrangler.jsonc` and `open-next.config.ts`.
+
+**From the dashboard (Workers Builds):** go to Workers & Pages, then Create, then Import a repository, and pick this repo.
+- Build command: `npx opennextjs-cloudflare build`
+- Deploy command: `npx opennextjs-cloudflare deploy`
+- **Build variables** (inlined at build time): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_APP_TIMEZONE`
+- **Runtime variables and secrets** (Worker, then Settings, then Variables and Secrets): the same `NEXT_PUBLIC_*` values, plus `SUPABASE_SERVICE_ROLE_KEY` (secret), `ANTHROPIC_API_KEY` (secret), `ANTHROPIC_MODEL` and `BILLING_PROVIDER`
+
+**From your machine:** `npx wrangler login`, then `npm run deploy`. To test in the Workers runtime locally, copy `.dev.vars.example` to `.dev.vars` and run `npm run preview`.
+
+After the first deploy, add `https://<your-worker>.workers.dev/**` (or your custom domain) to Supabase's Redirect URLs, and set it as the Site URL.
+
+The Workers free plan caps the compressed Worker at 3 MB. If the deploy fails on size, switch to Workers Paid, which allows 10 MB.
 
 ## How it's organised
 
