@@ -1,0 +1,29 @@
+import Link from "next/link";
+import { Logo } from "@/components/shell/logo";
+import { OnboardingForm } from "./onboarding-form";
+import { listMyWorkspaces } from "@/lib/workspace";
+
+export const metadata = { title: "Set up your company" };
+
+export default async function OnboardingPage() {
+  const existing = await listMyWorkspaces();
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
+      <div className="mb-8">
+        <Logo />
+      </div>
+      <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-sm">
+        <h1 className="text-lg font-semibold">{existing.length ? "Add another company" : "Set up your company"}</h1>
+        <p className="mt-1 text-sm text-muted">
+          Each company gets its own workspace: goals, team, pipeline and finances. You can run several from one account.
+        </p>
+        <OnboardingForm />
+        {existing.length > 0 && (
+          <p className="mt-4 text-center text-xs text-muted">
+            or go back to <Link className="text-accent" href={`/w/${existing[0]!.workspace.slug}`}>{existing[0]!.workspace.name}</Link>
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
