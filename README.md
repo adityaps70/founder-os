@@ -52,7 +52,7 @@ cp .env.example .env.local
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only. Used for billing plan changes and invite emails |
 | `NEXT_PUBLIC_APP_URL` | Public URL, used in auth redirects and invite links |
 | `NEXT_PUBLIC_APP_TIMEZONE` | Defaults to `Asia/Kolkata`. Sets what "today" and "this week" mean |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Copilot (default model `claude-sonnet-4-5`) |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Copilot (default model `claude-sonnet-5-5`) |
 | `BILLING_PROVIDER` | `stub` (default) switches plans instantly without payment |
 
 ### 3. Run
