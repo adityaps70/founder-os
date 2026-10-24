@@ -4,7 +4,7 @@ import type { WorkspaceContext } from "@/lib/workspace";
 import { todayISO } from "@/lib/utils";
 import { buildSnapshot } from "./context";
 
-export const COPILOT_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
+export const COPILOT_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
 
 export function aiConfigured() {
   return !!process.env.ANTHROPIC_API_KEY;
