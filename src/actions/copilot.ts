@@ -18,6 +18,8 @@ function friendly(e: unknown) {
   // Log as plain strings so they show up in Cloudflare / Vercel logs (Error objects lose their message there).
   console.error(`Anthropic API error status=${status ?? "n/a"} model=${COPILOT_MODEL} message=${apiMsg}`);
   if (status === 401) return "The Anthropic API key was rejected. Check ANTHROPIC_API_KEY.";
+  if (status === 403 && /request not allowed/i.test(apiMsg))
+    return "Anthropic refused the request from this server's location. Try again in a moment; if it keeps happening, check the Worker's placement region.";
   if (status === 403) return "This Anthropic API key isn't allowed to use the Copilot model. Check your Anthropic workspace permissions.";
   if (status === 404) return `The model "${COPILOT_MODEL}" isn't available to this API key. Set ANTHROPIC_MODEL to a model your key can use.`;
   if (/credit balance/i.test(apiMsg)) return "Your Anthropic account is out of credits. Add credits at console.anthropic.com → Billing, then try again.";
