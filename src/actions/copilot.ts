@@ -2,7 +2,7 @@
 import { getWorkspace } from "@/lib/workspace";
 import { refreshWorkspace } from "@/lib/revalidate";
 import { checkLimit, recordUsage } from "@/lib/billing/limits";
-import { aiConfigured, runBrief, runCopilot } from "@/lib/ai/copilot";
+import { aiConfigured, COPILOT_MODEL, runBrief, runCopilot } from "@/lib/ai/copilot";
 import { todayISO } from "@/lib/utils";
 import type { CopilotMessage } from "@/lib/types";
 
@@ -10,11 +10,20 @@ export type CopilotResult = { ok: true; reply: string; actions: string[] } | { o
 
 const NOT_CONFIGURED = "The Copilot isn't configured yet. Add ANTHROPIC_API_KEY to your environment variables.";
 
+/** Turns an Anthropic API error into a message the founder can act on, and logs the details. */
 function friendly(e: unknown) {
-  const msg = e instanceof Error ? e.message : String(e);
-  if (/401|authentication/i.test(msg)) return "The Anthropic API key was rejected. Check ANTHROPIC_API_KEY.";
-  if (/429|rate/i.test(msg)) return "The AI is busy right now. Try again in a moment.";
-  return "The Copilot couldn't answer just now. Please try again.";
+  const err = e as { status?: number; message?: string; error?: { error?: { type?: string; message?: string } } };
+  const status = typeof err?.status === "number" ? err.status : undefined;
+  const apiMsg = err?.error?.error?.message ?? (e instanceof Error ? e.message : String(e));
+  // Log as plain strings so they show up in Cloudflare / Vercel logs (Error objects lose their message there).
+  console.error(`Anthropic API error status=${status ?? "n/a"} model=${COPILOT_MODEL} message=${apiMsg}`);
+  if (status === 401) return "The Anthropic API key was rejected. Check ANTHROPIC_API_KEY.";
+  if (status === 403) return "This Anthropic API key isn't allowed to use the Copilot model. Check your Anthropic workspace permissions.";
+  if (status === 404) return `The model "${COPILOT_MODEL}" isn't available to this API key. Set ANTHROPIC_MODEL to a model your key can use.`;
+  if (/credit balance/i.test(apiMsg)) return "Your Anthropic account is out of credits. Add credits at console.anthropic.com → Billing, then try again.";
+  if (status === 429) return "The AI is rate-limited right now. Try again in a moment.";
+  if (status === 529 || status === 503) return "The AI service is overloaded right now. Try again shortly.";
+  return `The Copilot couldn't answer${status ? ` (error ${status})` : ""}: ${apiMsg.slice(0, 180)}`;
 }
 
 /** Send a message to the Copilot; persists both sides of the conversation. */
@@ -49,7 +58,6 @@ export async function sendCopilotMessage(slug: string, message: string): Promise
     if (turn.actions.length) refreshWorkspace(slug);
     return { ok: true, reply, actions: turn.actions };
   } catch (e) {
-    console.error("copilot error", e);
     return { ok: false, error: friendly(e) };
   }
 }
@@ -81,7 +89,6 @@ export async function generateBrief(slug: string, _prev: BriefState, _fd: FormDa
     refreshWorkspace(slug);
     return null;
   } catch (e) {
-    console.error("brief error", e);
     return { error: friendly(e) };
   }
 }
