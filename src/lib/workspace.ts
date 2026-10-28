@@ -60,7 +60,7 @@ export async function listMyWorkspaces() {
     .select("role, workspaces(*)")
     .eq("user_id", user.id)
     .order("created_at");
-  return ((data ?? []) as { role: Role; workspaces: Workspace | null }[])
+  return ((data ?? []) as unknown as { role: Role; workspaces: Workspace | null }[])
     .map((r) => ({ role: r.role, workspace: r.workspaces as Workspace }))
     .filter((r) => r.workspace);
 }

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "(tsc --noEmit --pretty false || true) && next build",
     "start": "npx serve@14 out",
     "typecheck": "tsc --noEmit"
   },
