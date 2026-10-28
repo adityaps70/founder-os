@@ -1,0 +1,67 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Lets source be uploaded through the GitHub website as founder-os-src.zip:
+      # the archive replaces the code (everything except .github) and is committed back.
+      - name: Unpack uploaded source archive
+        run: |
+          if [ -f founder-os-src.zip ]; then
+            find . -mindepth 1 -maxdepth 1 ! -name .git ! -name .github ! -name founder-os-src.zip -exec rm -rf {} +
+            unzip -o -q founder-os-src.zip -d .
+            rm founder-os-src.zip
+            git config user.name "github-actions[bot]"
+            git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "Unpack uploaded source archive" || echo "nothing to commit"
+            git push
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+
+      - name: Build static site
+        run: npm run build
+        env:
+          # Public values only (the publishable key is meant for browsers; RLS protects the data).
+          NEXT_PUBLIC_BASE_PATH: /founder-os
+          NEXT_PUBLIC_SUPABASE_URL: https://mqjxlwepmkbmmttubkny.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ATZrCdnnzb5P8KbdDD32qg_mdpL1GZE
+          NEXT_PUBLIC_APP_TIMEZONE: Asia/Kolkata
+
+      - run: touch out/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
