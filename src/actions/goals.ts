@@ -1,4 +1,3 @@
-"use server";
 import { getWorkspace } from "@/lib/workspace";
 import { refreshWorkspace } from "@/lib/revalidate";
 import { currentQuarter, num, str } from "@/lib/utils";

@@ -17,8 +17,10 @@ export function NavLink({
   activeClassName?: string;
   children: React.ReactNode;
 }) {
-  const path = usePathname();
-  const active = exact ? path === href : path === href || path.startsWith(href + "/");
+  const strip = (p: string) => (p.length > 1 ? p.replace(/\/+$/, "") : p);
+  const path = strip(usePathname() ?? "");
+  const target = strip(href.split("?")[0]!);
+  const active = exact ? path === target : path === target || path.startsWith(target + "/");
   return (
     <Link href={href} className={cn(className, active && activeClassName)} aria-current={active ? "page" : undefined}>
       {children}

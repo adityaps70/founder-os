@@ -66,11 +66,11 @@ export function AuthForm({ mode, next, error }: { mode: "login" | "signup"; next
       <p className="text-center text-xs text-muted">
         {mode === "login" ? (
           <>
-            New here? <Link className="font-medium text-accent" href={`/signup${next ? `?next=${encodeURIComponent(next)}` : ""}`}>Create an account</Link>
+            New here? <Link className="font-medium text-accent" href={`/signup/${next ? `?next=${encodeURIComponent(next)}` : ""}`}>Create an account</Link>
           </>
         ) : (
           <>
-            Already have an account? <Link className="font-medium text-accent" href={`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`}>Sign in</Link>
+            Already have an account? <Link className="font-medium text-accent" href={`/login/${next ? `?next=${encodeURIComponent(next)}` : ""}`}>Sign in</Link>
           </>
         )}
       </p>

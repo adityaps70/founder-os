@@ -29,7 +29,7 @@ export const NAV: { section: string; items: NavItem[] }[] = [
   {
     section: "",
     items: [
-      { label: "Command Center", path: "", icon: LayoutDashboard, exact: true },
+      { label: "Command Center", path: "/", icon: LayoutDashboard, exact: true },
       { label: "Copilot", path: "/copilot", icon: Bot },
       { label: "Focus", path: "/focus", icon: Grid2x2 },
       { label: "Weekly review", path: "/review", icon: CalendarCheck },

@@ -22,101 +22,79 @@ Multi-tenant SaaS: each company is a **workspace**, a founder can run several fr
 
 ## Stack
 
-- **Next.js 15** (App Router, Server Components, Server Actions), React 19, TypeScript, Tailwind CSS v4
-- **Supabase**: Postgres, Auth (email/password, magic link, Google) and Row Level Security for tenant isolation
-- **Anthropic API** for the Copilot and the morning brief
+- **Next.js 15** static export (`output: "export"`), React 19, TypeScript, Tailwind CSS v4 — hosted on **GitHub Pages**
+- **Supabase**: Postgres, Auth (email/password, magic link, Google), Row Level Security for tenant isolation, and DB triggers for plan limits
+- **Supabase Edge Function `founder-api`** for everything that needs a secret: the AI Copilot and morning brief (Anthropic API) and plan changes
 - No other runtime dependencies (charts are hand-rolled SVG)
+
+The browser talks to Supabase directly with the publishable key. That is safe because every table is protected by RLS: users only ever see rows of workspaces they belong to.
 
 ## Getting started
 
 ### 1. Supabase
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor**, paste `supabase/migrations/0001_init.sql` and run it. Or, with the Supabase CLI: `supabase link` then `supabase db push`.
-3. **Authentication → URL Configuration**: set Site URL to your app URL, for example `http://localhost:3000`. Add `http://localhost:3000/**` and your production URL `/**` to Redirect URLs.
-4. Optional: enable **Google** under Authentication → Providers.
-5. For invite emails, set the **Invite user** email template link to:
-   `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next={{ .RedirectTo }}`
-   You can do the same for Magic Link (`type=magiclink`). Even without email, every invite has a copyable link in Settings → Members.
+2. **SQL Editor**: run `supabase/migrations/0001_init.sql`, then `0002_plan_limits.sql` (or `supabase db push` with the CLI).
+3. **Edge Functions → Deploy a new function**: name it `founder-api`, paste `supabase/functions/founder-api/index.ts`, and turn **Verify JWT off** (the function checks the user itself). CLI: `supabase functions deploy founder-api --no-verify-jwt`.
+4. **Edge Functions → Secrets**: add `ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_MODEL`, default `claude-sonnet-5-5`; `APP_TIMEZONE`, default `Asia/Kolkata`).
+5. **Authentication → URL Configuration**: Site URL = your site (for example `https://<user>.github.io/founder-os/`); add `<site>/**` and `http://localhost:3000/**` to Redirect URLs.
+6. Optional: enable **Google** under Authentication → Sign In / Providers.
 
 ### 2. Environment
 
 ```bash
-cp .env.example .env.local
-# fill in the Supabase URL + anon key + service role key, and your ANTHROPIC_API_KEY
+cp .env.example .env.local   # Supabase URL + publishable key; base path empty for local dev
+npm install
+npm run dev                  # http://localhost:3000
+npm run build                # static site in ./out
 ```
 
 | Variable | Purpose |
 | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase project |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server only. Used for billing plan changes and invite emails |
-| `NEXT_PUBLIC_APP_URL` | Public URL, used in auth redirects and invite links |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase project URL and publishable key (public by design) |
+| `NEXT_PUBLIC_BASE_PATH` | `/founder-os` on `https://<user>.github.io/founder-os/`, empty locally or on a custom domain |
 | `NEXT_PUBLIC_APP_TIMEZONE` | Defaults to `Asia/Kolkata`. Sets what "today" and "this week" mean |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Copilot (default model `claude-sonnet-5-5`) |
-| `BILLING_PROVIDER` | `stub` (default) switches plans instantly without payment |
 
-### 3. Run
+### 3. Deploy (GitHub Pages)
 
-```bash
-npm install
-npm run dev        # http://localhost:3000
-npm run build      # production build + type check
-```
+`.github/workflows/deploy.yml` builds the static site and publishes it to GitHub Pages on every push to `main`. In the repo, **Settings → Pages → Source: GitHub Actions**. The workflow sets the public build variables (Supabase URL, publishable key, base path) — edit them there if you change projects or add a custom domain.
 
-### 4. Deploy (Cloudflare Workers)
-
-Founder OS runs on Cloudflare Workers through [OpenNext](https://opennext.js.org/cloudflare). The config is in `wrangler.jsonc` and `open-next.config.ts`.
-
-**From the dashboard (Workers Builds):** go to Workers & Pages, then Create, then Import a repository, and pick this repo.
-- Build command: `npx opennextjs-cloudflare build`
-- Deploy command: `npx opennextjs-cloudflare deploy`
-- **Build variables** (inlined at build time): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_APP_TIMEZONE`
-- **Runtime variables and secrets** (Worker, then Settings, then Variables and Secrets): the same `NEXT_PUBLIC_*` values, plus `SUPABASE_SERVICE_ROLE_KEY` (secret), `ANTHROPIC_API_KEY` (secret), `ANTHROPIC_MODEL` and `BILLING_PROVIDER`
-
-**From your machine:** `npx wrangler login`, then `npm run deploy`. To test in the Workers runtime locally, copy `.dev.vars.example` to `.dev.vars` and run `npm run preview`.
-
-After the first deploy, add `https://<your-worker>.workers.dev/**` (or your custom domain) to Supabase's Redirect URLs, and set it as the Site URL.
-
-The Workers free plan caps the compressed Worker at 3 MB. If the deploy fails on size, switch to Workers Paid, which allows 10 MB.
+GitHub Pages on the free plan needs a **public** repository (private repos need GitHub Pro).
 
 ## How it's organised
 
 ```
 supabase/migrations/0001_init.sql   schema, RLS policies, RPCs (create_workspace, accept_invitation)
-src/middleware.ts                   session refresh + auth gate
+supabase/migrations/0002_plan_limits.sql  plan limits enforced by triggers
+supabase/functions/founder-api/     Edge Function: Copilot, morning brief, plan changes
 src/app/
   page.tsx                          marketing landing + pricing
   (auth)/login, signup              auth pages
-  auth/callback, auth/confirm       OAuth / email-link handlers
+  auth/callback/                    OAuth / magic link / email confirmation handler
   onboarding/                       create a company workspace
-  invite/[token]/                   accept an invitation
-  w/[slug]/...                      the app (one folder per module)
-src/actions/*.ts                    server actions (all mutations)
+  invite/?token=                    accept an invitation
+  w/...                             the app (one folder per module); the current workspace is chosen with ?ws=<slug>
+src/actions/*.ts                    all mutations (run in the browser, protected by RLS)
 src/lib/
-  workspace.ts                      getWorkspace(slug): user + workspace + role + team (use everywhere)
-  ai/context.ts                     builds the Copilot's company snapshot
-  ai/copilot.ts                     Claude tool-use loop + morning brief
-  billing/plans.ts | limits.ts      plans, limits, usage metering (checkLimit)
-  billing/provider.ts               payment provider interface (stub today)
+  workspace.ts                      client workspace store: getWorkspace(), refreshWorkspace()
+  supabase/client.ts                browser Supabase client + callApi() for the Edge Function
+  billing/plans.ts | limits.ts      plans and limits (enforced again in the database)
+src/components/shell/async-page.tsx runs each page's async render function in the browser
 src/components/ui                   design system (tokens in src/app/globals.css)
 ```
 
-**Tenancy & security:** every business table has a `workspace_id`, and RLS lets only members of that workspace read or write its rows (`is_member()`). Admin-only operations use `is_admin()`. Billing columns can only be changed with the service role (DB trigger), and nobody can grant the `owner` role from the client.
+**Tenancy & security:** every business table has a `workspace_id`, and RLS lets only members of that workspace read or write its rows (`is_member()`). Admin-only operations use `is_admin()`. Billing columns can only be changed by the service role (DB trigger), so only the Edge Function can change plans, and nobody can grant the `owner` role from the client. Plan limits (seats, team members, open deals, AI messages) are enforced in the database and the Edge Function.
 
 **Team vs members:** *team members* are the people you manage. They don't need a login, so you can assign and track work for anyone. *Members* are people with a login. When an invited person accepts, they are linked to their team entry by email.
 
 ## Adding real billing (Razorpay or Stripe)
 
-1. Implement `BillingProvider` in `src/lib/billing/provider.ts`. `startCheckout` returns the hosted checkout URL (a Razorpay subscription `short_url` or a Stripe Checkout `session.url`).
-2. Implement `src/app/api/billing/webhook/route.ts`: verify the signature, find the workspace (store `workspace_id` in subscription notes or metadata), then call `setWorkspacePlan()`.
-3. Set `BILLING_PROVIDER=razorpay` (or `stripe`) and the provider's keys.
-
-Plan limits are enforced in server actions with `checkLimit(ctx, "teamMembers" | "seats" | "openDeals" | "aiMessages")`.
+In `supabase/functions/founder-api/index.ts`, replace the stub in the `change_plan` action with a checkout: create a Razorpay subscription or Stripe Checkout session and return `{ ok: true, url }` (the app redirects to it). Add a second action (or function) for the provider's webhook that verifies the signature and updates the workspace's billing columns with the service role.
 
 ## Roadmap ideas
 
 - Google Calendar / Gmail sync (meetings and follow-ups)
 - Slack / WhatsApp check-in reminders and digests
-- Scheduled morning brief by email (cron + `runBrief`)
+- Scheduled morning brief by email (Supabase cron + the `brief` action)
 - Hiring pipeline, SOP / wiki module
 - Investor update templates with KPI charts

@@ -21,7 +21,7 @@ export function MeetingList({
         const people = m.attendee_ids.map((id) => team.find((t) => t.id === id)).filter((t): t is TeamMember => !!t);
         const open = openItems.get(m.id) ?? 0;
         return (
-          <Link key={m.id} href={`/w/${slug}/meetings/${m.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-surface-2/60">
+          <Link key={m.id} href={`/w/meetings/view/?id=${m.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-surface-2/60">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-fg">{m.title}</p>
               <p className="text-xs text-muted">

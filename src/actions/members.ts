@@ -1,7 +1,5 @@
-"use server";
 import { canAdmin, getWorkspace } from "@/lib/workspace";
 import { refreshWorkspace } from "@/lib/revalidate";
-import { createServiceClient } from "@/lib/supabase/server";
 import { planFor } from "@/lib/billing/plans";
 import { str } from "@/lib/utils";
 import type { ActionState, Role } from "@/lib/types";
@@ -26,22 +24,13 @@ export async function inviteMember(slug: string, _prev: ActionState, fd: FormDat
     return { error: `The ${plan.name} plan includes ${plan.limits.seats} seats (members + pending invites). Upgrade in Billing.` };
   }
 
-  const { data: inv, error } = await supabase
+  const { error } = await supabase
     .from("invitations")
-    .insert({ workspace_id: workspace.id, email, role, invited_by: ctx.user.id })
-    .select("token")
-    .single();
+    .insert({ workspace_id: workspace.id, email, role, invited_by: ctx.user.id });
   if (error) return { error: error.message };
 
-  const link = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/invite/${inv.token}`;
-  let emailed = false;
-  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    // Sends Supabase's "invite user" email for new users; existing users just use the link.
-    const { error: mailErr } = await createServiceClient().auth.admin.inviteUserByEmail(email, { redirectTo: link });
-    emailed = !mailErr;
-  }
   refreshWorkspace(slug);
-  return { ok: true, message: emailed ? `Invite emailed to ${email}.` : `Invite created — share the link with ${email}.` };
+  return { ok: true, message: `Invite created — copy the link below and send it to ${email}.` };
 }
 
 export async function revokeInvitation(slug: string, id: string): Promise<void> {

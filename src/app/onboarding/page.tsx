@@ -1,12 +1,21 @@
+"use client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Logo } from "@/components/shell/logo";
 import { OnboardingForm } from "./onboarding-form";
 import { listMyWorkspaces } from "@/lib/workspace";
 
-export const metadata = { title: "Set up your company" };
+export default function OnboardingPage() {
+  const [existing, setExisting] = useState<{ name: string; slug: string }[] | null>(null);
 
-export default async function OnboardingPage() {
-  const existing = await listMyWorkspaces();
+  useEffect(() => {
+    document.title = "Set up your company · Founder OS";
+    listMyWorkspaces()
+      .then((m) => setExisting(m.map((r) => ({ name: r.workspace.name, slug: r.workspace.slug }))))
+      .catch(() => {}); // not signed in → requireUser() redirects to /login
+  }, []);
+
+  if (!existing) return null;
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
       <div className="mb-8">
@@ -20,7 +29,10 @@ export default async function OnboardingPage() {
         <OnboardingForm />
         {existing.length > 0 && (
           <p className="mt-4 text-center text-xs text-muted">
-            or go back to <Link className="text-accent" href={`/w/${existing[0]!.workspace.slug}`}>{existing[0]!.workspace.name}</Link>
+            or go back to{" "}
+            <Link className="text-accent" href={`/w/?ws=${existing[0]!.slug}`}>
+              {existing[0]!.name}
+            </Link>
           </p>
         )}
       </div>

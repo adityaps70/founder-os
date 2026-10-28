@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /** Tab bar driven by an explicit `active` key (the pipeline lives in a query param). */
 export function PipelineTabs({ slug, active }: { slug: string; active: string }) {
-  const base = `/w/${slug}/pipeline`;
+  const base = `/w/pipeline`;
   const items = [
     { key: "sales", label: "Sales", href: `${base}?p=sales` },
     { key: "investors", label: "Fundraising", href: `${base}?p=investors` },

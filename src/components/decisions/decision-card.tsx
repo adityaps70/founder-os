@@ -43,7 +43,7 @@ export function DecisionCard({
             {showMeeting && meeting && (
               <span>
                 · from{" "}
-                <Link href={`/w/${slug}/meetings/${meeting.id}`} className="text-accent hover:underline">
+                <Link href={`/w/meetings/view/?id=${meeting.id}`} className="text-accent hover:underline">
                   {meeting.title}
                 </Link>
               </span>

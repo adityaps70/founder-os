@@ -1,5 +1,4 @@
-"use server";
-import { redirect } from "next/navigation";
+import { redirect } from "@/lib/nav";
 import { getWorkspace } from "@/lib/workspace";
 import { refreshWorkspace } from "@/lib/revalidate";
 import { str } from "@/lib/utils";
@@ -53,6 +52,6 @@ export async function setProjectStatus(slug: string, id: string, status: Project
 export async function deleteProject(slug: string, id: string): Promise<void> {
   const { supabase } = await getWorkspace(slug);
   await supabase.from("projects").delete().eq("id", id);
+  redirect(`/w/projects/`);
   refreshWorkspace(slug);
-  redirect(`/w/${slug}/projects`);
 }

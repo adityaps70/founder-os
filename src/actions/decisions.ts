@@ -1,4 +1,3 @@
-"use server";
 import { getWorkspace, type WorkspaceContext } from "@/lib/workspace";
 import { refreshWorkspace } from "@/lib/revalidate";
 import { str } from "@/lib/utils";

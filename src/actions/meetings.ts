@@ -1,5 +1,4 @@
-"use server";
-import { redirect } from "next/navigation";
+import { redirect } from "@/lib/nav";
 import { getWorkspace, type WorkspaceContext } from "@/lib/workspace";
 import { refreshWorkspace } from "@/lib/revalidate";
 import { num, str } from "@/lib/utils";
@@ -45,7 +44,7 @@ export async function createMeeting(slug: string, _prev: ActionState, fd: FormDa
     .single();
   if (error) return { error: error.message };
   refreshWorkspace(slug);
-  if (fd.get("open_after") === "1" && data?.id) redirect(`/w/${slug}/meetings/${data.id}`);
+  if (fd.get("open_after") === "1" && data?.id) redirect(`/w/meetings/view/?id=${data.id}`);
   return { ok: true };
 }
 
@@ -82,6 +81,6 @@ export async function updateMeetingNotes(slug: string, id: string, _prev: Action
 export async function deleteMeeting(slug: string, id: string): Promise<void> {
   const ctx = await getWorkspace(slug);
   await ctx.supabase.from("meetings").delete().eq("id", id).eq("workspace_id", ctx.workspace.id);
+  redirect(`/w/meetings/`);
   refreshWorkspace(slug);
-  redirect(`/w/${slug}/meetings`);
 }

@@ -28,7 +28,7 @@ export function WorkspaceSwitcher({
         {workspaces.map((w) => (
           <Link
             key={w.slug}
-            href={`/w/${w.slug}`}
+            href={`/w/?ws=${w.slug}`}
             onClick={() => ref.current?.removeAttribute("open")}
             className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-surface-2"
           >
@@ -37,7 +37,7 @@ export function WorkspaceSwitcher({
           </Link>
         ))}
         <div className="my-1 h-px bg-line" />
-        <Link href="/onboarding" className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted hover:bg-surface-2 hover:text-fg">
+        <Link href="/onboarding/" className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted hover:bg-surface-2 hover:text-fg">
           <Plus className="h-4 w-4" /> Add company
         </Link>
       </div>

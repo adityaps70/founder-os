@@ -1,4 +1,3 @@
-import "server-only";
 import type { WorkspaceContext } from "@/lib/workspace";
 import { planFor, type Plan } from "./plans";
 import { todayISO, zonedDayRange } from "@/lib/utils";
@@ -43,8 +42,4 @@ export async function checkLimit(ctx: Pick<WorkspaceContext, "supabase" | "works
     openDeals: "open deals",
   };
   return `You've reached the ${plan.name} plan limit of ${limit} ${what[key]}. Upgrade in Settings → Billing.`;
-}
-
-export async function recordUsage(ctx: Pick<WorkspaceContext, "supabase" | "workspace">, kind: "ai_message") {
-  await ctx.supabase.from("usage_events").insert({ workspace_id: ctx.workspace.id, kind });
 }

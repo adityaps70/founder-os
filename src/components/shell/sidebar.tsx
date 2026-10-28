@@ -1,3 +1,4 @@
+"use client";
 import { LogOut } from "lucide-react";
 import { signOut } from "@/actions/auth";
 import { NavLink } from "@/components/ui/nav-link";
@@ -16,7 +17,8 @@ export function Sidebar({
   workspaces: { name: string; slug: string }[];
   email?: string;
 }) {
-  const base = `/w/${slug}`;
+  const base = "/w";
+  void slug;
   return (
     <div className="flex h-full flex-col gap-3 p-3">
       <WorkspaceSwitcher current={current} workspaces={workspaces} />

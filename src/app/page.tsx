@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import {
   ChartColumn,
@@ -16,7 +17,8 @@ import {
 import { Logo } from "@/components/shell/logo";
 import { buttonClass } from "@/components/ui";
 import { PLANS } from "@/lib/billing/plans";
-import { createClient } from "@/lib/supabase/server";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { formatMoney } from "@/lib/utils";
 
 const MODULES = [
@@ -39,11 +41,13 @@ const ASKS = [
   "Turn these meeting notes into tasks for Priya and Arjun",
 ];
 
-export default async function Landing() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function Landing() {
+  const [user, setUser] = useState<{ id: string } | null>(null);
+  useEffect(() => {
+    createClient()
+      .auth.getSession()
+      .then(({ data }) => setUser(data.session?.user ?? null));
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -55,15 +59,15 @@ export default async function Landing() {
               Pricing
             </a>
             {user ? (
-              <Link href="/app" className={buttonClass("primary", "sm")}>
+              <Link href="/app/" className={buttonClass("primary", "sm")}>
                 Open app
               </Link>
             ) : (
               <>
-                <Link href="/login" className={buttonClass("ghost", "sm")}>
+                <Link href="/login/" className={buttonClass("ghost", "sm")}>
                   Sign in
                 </Link>
-                <Link href="/signup" className={buttonClass("primary", "sm")}>
+                <Link href="/signup/" className={buttonClass("primary", "sm")}>
                   Start free
                 </Link>
               </>
@@ -84,7 +88,7 @@ export default async function Landing() {
             Goals, tasks, team, meetings, pipeline, finances and KPIs in one place, so you stop juggling ten tools and start each day knowing exactly what matters.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href={user ? "/app" : "/signup"} className={buttonClass("primary", "md", "h-11 px-5 text-base")}>
+            <Link href={user ? "/app/" : "/signup/"} className={buttonClass("primary", "md", "h-11 px-5 text-base")}>
               {user ? "Open your workspace" : "Start free — no card needed"}
             </Link>
             <a href="#modules" className={buttonClass("secondary", "md", "h-11 px-5 text-base")}>
@@ -160,7 +164,7 @@ export default async function Landing() {
                       </li>
                     ))}
                   </ul>
-                  <Link href={user ? "/app" : "/signup"} className={buttonClass(i === 1 ? "primary" : "secondary", "md", "mt-6 w-full")}>
+                  <Link href={user ? "/app/" : "/signup/"} className={buttonClass(i === 1 ? "primary" : "secondary", "md", "mt-6 w-full")}>
                     {p.price.INR === 0 ? "Start free" : `Choose ${p.name}`}
                   </Link>
                 </div>

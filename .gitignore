@@ -8,7 +8,3 @@ out
 .DS_Store
 .vercel
 supabase/.temp
-# Cloudflare / OpenNext
-.open-next
-.wrangler
-.dev.vars

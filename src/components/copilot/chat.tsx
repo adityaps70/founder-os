@@ -114,7 +114,7 @@ export function Chat({
       </div>
 
       <div className="border-t border-line p-3">
-        {!configured && <p className="mb-2 text-xs text-danger">Add ANTHROPIC_API_KEY to your environment to enable the Copilot.</p>}
+        {!configured && <p className="mb-2 text-xs text-danger">The Copilot isn't set up yet: add ANTHROPIC_API_KEY in Supabase → Edge Functions → Secrets.</p>}
         {error && <p className="mb-2 text-xs text-danger">{error}</p>}
         <form
           onSubmit={(e) => {

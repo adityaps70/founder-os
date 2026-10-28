@@ -1,6 +1,5 @@
-"use server";
-import { redirect } from "next/navigation";
-import { requireUser, getWorkspace, canAdmin } from "@/lib/workspace";
+import { redirect } from "@/lib/nav";
+import { requireUser, getWorkspace, canAdmin, clearWorkspace, loadWorkspace, LAST_WS_KEY } from "@/lib/workspace";
 import { refreshWorkspace } from "@/lib/revalidate";
 import { num, slugify, str } from "@/lib/utils";
 import type { ActionState } from "@/lib/types";
@@ -15,7 +14,11 @@ export async function createWorkspace(_prev: ActionState, fd: FormData): Promise
   let slug = base.length < 3 ? `${base}-co` : base;
   for (let i = 0; i < 5; i++) {
     const { data, error } = await supabase.rpc("create_workspace", { p_name: name, p_slug: slug, p_currency: currency });
-    if (!error && data) redirect(`/w/${(data as { slug: string }).slug}`);
+    if (!error && data) {
+      const created = data as { slug: string };
+      await loadWorkspace(created.slug);
+      return redirect(`/w/?ws=${created.slug}`);
+    }
     if (error && !/duplicate|unique/i.test(error.message)) return { error: error.message };
     slug = `${base}-${Math.random().toString(36).slice(2, 6)}`;
   }
@@ -53,5 +56,11 @@ export async function deleteWorkspace(slug: string, fd: FormData): Promise<void>
   const { supabase, workspace, role } = await getWorkspace(slug);
   if (role !== "owner" || str(fd, "confirm") !== workspace.slug) return;
   await supabase.from("workspaces").delete().eq("id", workspace.id);
-  redirect("/app");
+  try {
+    localStorage.removeItem(LAST_WS_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+  clearWorkspace();
+  redirect("/app/");
 }
